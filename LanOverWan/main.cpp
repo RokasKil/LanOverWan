@@ -10,9 +10,20 @@ bool initiateFunctions();
 DNSServiceRef client;
 static void DNSSD_API browse_reply(DNSServiceRef sdref, const DNSServiceFlags flags, uint32_t ifIndex, DNSServiceErrorType errorCode,
 	const char* replyName, const char* replyType, const char* replyDomain, void* context);
+static void DNSSD_API resolve_reply(DNSServiceRef sdref, const DNSServiceFlags flags, uint32_t ifIndex, DNSServiceErrorType errorCode,
+	const char* fullname, const char* hosttarget, uint16_t port, uint16_t txtLen, const unsigned char* txtRecord, void* context);
+static void DNSSD_API qr_reply(DNSServiceRef sdref, const DNSServiceFlags flags, uint32_t ifIndex, DNSServiceErrorType errorCode,
+	const char* fullname, uint16_t rrtype, uint16_t rrclass, uint16_t rdlen, const void* rdata, uint32_t ttl, void* context);
 
 void browseTask();
 thread browseThread;
+
+void handleCallbacksTask(DNSServiceRef service, string name);
+
+void handleCallbacksTask(DNSServiceRef service, string name, bool deallocate);
+
+#define handleCallbacksTaskPointer static_cast<void (*)(DNSServiceRef, string)>(handleCallbacksTask)
+
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
 {
 	//
@@ -97,7 +108,8 @@ bool initiateFunctions() {
 
 static void DNSSD_API browse_reply(DNSServiceRef sdref, const DNSServiceFlags flags, uint32_t ifIndex, DNSServiceErrorType errorCode,
 	const char* replyName, const char* replyType, const char* replyDomain, void* context) {
-	if (flags & kDNSServiceFlagsAdd) {
+	bool added = flags & kDNSServiceFlagsAdd;
+	if (added) {
 
 		cout << "Added game ";
 	}
@@ -105,6 +117,17 @@ static void DNSSD_API browse_reply(DNSServiceRef sdref, const DNSServiceFlags fl
 		cout << "Removed game ";
 	}
 	cout << "(" << ifIndex << "): " << replyName << endl;
+	if (added) {
+		DNSServiceRef resolver;
+		DNSServiceErrorType err = DNSServiceResolve(&resolver, 0, ifIndex, replyName, replyType, replyDomain, resolve_reply, NULL);
+		if (err == kDNSServiceErr_NoError) {
+			thread resolveThread(handleCallbacksTaskPointer, resolver, "Resolver");
+			resolveThread.detach();
+		}
+		else {
+			cout << "Failed to resolve service " << err << endl;
+		}
+	}
 }
 
 void browseTask()
@@ -117,9 +140,53 @@ void browseTask()
 		cout << "Service browser failed " << err << endl;
 		return;
 	}
-	while (DNSServiceProcessResult(client) == kDNSServiceErr_NoError) {
-		cout << "Result recieved" << endl;
-	}
-	DNSServiceRefDeallocate(client);
+	handleCallbacksTask(client, "Browser");
 
+}
+
+
+void handleCallbacksTask(DNSServiceRef service, string name) {
+	handleCallbacksTask(service, name, true);
+}
+
+void handleCallbacksTask(DNSServiceRef service, string name, bool deallocate) {
+	DNSServiceErrorType err;
+	while ((err = DNSServiceProcessResult(service)) == kDNSServiceErr_NoError);
+	if (name != "") {
+		cout << name << " stopped :" << err << endl;
+	}
+	if (deallocate) {
+		DNSServiceRefDeallocate(service);
+	}
+}
+
+static void DNSSD_API resolve_reply(DNSServiceRef sdref, const DNSServiceFlags flags, uint32_t ifIndex, DNSServiceErrorType errorCode,
+	const char* fullname, const char* hosttarget, uint16_t port, uint16_t txtLen, const unsigned char* txtRecord, void* context) {
+	cout << "Resolved " << fullname << " on (" << ifIndex << "): " << hosttarget << ":" << htons(port) << " flags: " << flags << " txtLen: " << txtLen << endl;
+	DNSServiceRef query;
+	// No idea what type is 0x42 (66) but it's what warcraft uses it and it gives me my data :)
+	DNSServiceErrorType err = DNSServiceQueryRecord(&query, kDNSServiceFlagsLongLivedQuery, ifIndex, fullname, 0x42, kDNSServiceClass_IN, qr_reply, NULL);
+	if (err == kDNSServiceErr_NoError) {
+		thread queryThread(handleCallbacksTaskPointer, query, "Query");
+		queryThread.detach();
+	}
+	else {
+		cout << "Failed to query TXT " << err << endl;
+	}
+	//only possible flag should be 0x1
+}
+
+
+static void DNSSD_API qr_reply(DNSServiceRef sdref, const DNSServiceFlags flags, uint32_t ifIndex, DNSServiceErrorType errorCode,
+	const char* fullname, uint16_t rrtype, uint16_t rrclass, uint16_t rdlen, const void* rdata, uint32_t ttl, void* context) {
+	cout << "Queried " << fullname << " on (" << ifIndex << ") flags: " << flags << " rrtype: " << rrtype << " rdlen: " << rdlen << " ttl: " << ttl << endl;
+	int count = TXTRecordGetCount(rdlen, rdata);
+	cout << "Found " << count << " entries" << endl;
+	char key[256];
+	const void* value;
+	uint8_t valueLen;
+	for (int i = 0; i < count; i++) {
+		TXTRecordGetItemAtIndex(rdlen, rdata, i, 256, key, &valueLen, &value);
+		cout << key << ": " << string((char*)value, (char*)value + valueLen) << endl;
+	}
 }

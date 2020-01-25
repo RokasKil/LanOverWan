@@ -151,6 +151,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="callbackTask.cpp" />
+    <ClCompile Include="ConfigLoader.cpp" />
     <ClCompile Include="functions.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mainClient.cpp" />
@@ -161,6 +162,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="callbackTask.h" />
+    <ClInclude Include="ConfigLoader.h" />
     <ClInclude Include="functions.h" />
     <ClInclude Include="mainClient.h" />
     <ClInclude Include="mainServer.h" />

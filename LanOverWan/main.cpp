@@ -8,6 +8,7 @@
 #include "mainServer.h"
 #include "mainClient.h"
 #include <iphlpapi.h>
+#include "configLoader.h"
 using namespace std;
 
 
@@ -17,6 +18,7 @@ void cleanupFunctions();
 bool getLocalAddresses();
 
 bool isServer = false;
+bool functionsSet = false;
 
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
 {
@@ -33,7 +35,28 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserv
 		freopen("CONOUT$", "w", stdout);
 		cout << "DLL_PROCESS_ATTACH" << endl;
 		cout << hModule << endl;
+		string address, port;
+		CFGL cfgl("WOLconfig.cfg", "//");
+		if (cfgl == false || cfgl.exists("server") == -1 || cfgl.exists("port") == -1 || cfgl.exists("host") == -1) {
 
+			cout << "Failed to load config" << endl;
+			ofstream out("WOLconfig.cfg");
+			out << "server=false //true or false" << endl;
+			out << "port=" << DEFAULT_PORT << endl;
+			out << "host=0.0.0.0" << endl;
+			return false;
+		}
+		else {
+			string temp;
+			cfgl.request("server", "false", temp);
+			isServer = (temp == "true");
+			cfgl.request("port", DEFAULT_PORT, port);
+			cfgl.request("host", "0.0.0.0", address);
+
+		}
+		cout << "server: " << isServer << endl;
+		cout << "host: " << address << endl;
+		cout << "port: " << port << endl;
 		fServer = isServer;
 
 		if (!isServer && !getLocalAddresses()) {
@@ -45,12 +68,12 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserv
 		}
 		if (isServer) {
 
-			thread initThread = thread(initServer, (string)DEFAULT_PORT);
+			thread initThread = thread(initServer, port);
 			initThread.detach();
 		}
 		else {
-			targetAddress = "5.20.79.34";
-			thread initThread = thread(initClient, (string)"5.20.79.34", (string)DEFAULT_PORT);
+			targetAddress = address;
+			thread initThread = thread(initClient, address, port);
 			initThread.detach();
 
 		}
@@ -65,7 +88,9 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserv
 		break;
 	case DLL_PROCESS_DETACH:
 		cout << "DLL_PROCESS_DETACH" << endl;
-		cleanupFunctions();
+		if (functionsSet) {
+			cleanupFunctions();
+		}
 		if (isServer) {
 			cleanupServer();
 		}
@@ -78,7 +103,6 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserv
 }
 
 bool initiateFunctions() {
-
 	DetourTransactionBegin();
 	DetourUpdateThread(GetCurrentThread());
 
@@ -121,6 +145,7 @@ bool initiateFunctions() {
 
 	DetourTransactionCommit();
 	//new std::thread(ts3plugin_configure, (void*)NULL, (void*)NULL);
+	functionsSet = true;
 	return true;
 }
 

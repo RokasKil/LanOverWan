@@ -122,7 +122,7 @@ bool initiateFunctions() {
 	WSAConnectByNameWOriginal = WSAConnectByNameW;
 	WSAConnectByNameAOriginal = WSAConnectByNameA;
 	WSAConnectByListOriginal = WSAConnectByList;
-	IsDebuggerPresentOriginal = IsDebuggerPresent;
+	//IsDebuggerPresentOriginal = IsDebuggerPresent;
 	DetourAttach((PVOID*)(&connectOriginal), connectReplaced);
 	DetourAttach((PVOID*)(&WSAConnectOriginal), WSAConnectReplaced);
 	//DetourAttach((PVOID*)(&WSAIoctlOriginal), WSAIoctlReplaced);

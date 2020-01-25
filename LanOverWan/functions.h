@@ -85,7 +85,7 @@ extern LPFN_CONNECTEX ConnectExOriginal;
 extern LPFN_CONNECTEX ConnectExReturned;
 extern sendFunction sendOriginal;
 extern recvFunction recvOriginal;
-extern IsDebuggerPresentFunction IsDebuggerPresentOriginal;
+//extern IsDebuggerPresentFunction IsDebuggerPresentOriginal;
 
 extern bool fServer;
 extern set<string> myAddresses;
@@ -133,4 +133,4 @@ BOOL WSAAPI WSAConnectByListReplaced(SOCKET s, PSOCKET_ADDRESS_LIST SocketAddres
 BOOL WSAAPI ConnectExReplaced(SOCKET s, const sockaddr* name, int namelen, PVOID lpSendBuffer, DWORD dwSendDataLength, LPDWORD lpdwBytesSent, LPOVERLAPPED lpOverlapped);
 int WSAAPI sendReplaced(SOCKET s, const char* buf, int len, int flags);
 int WSAAPI recvReplaced(SOCKET s, char* buf, int len, int flags);
-BOOL WINAPI IsDebuggerPresentReplaced();
+//BOOL WINAPI IsDebuggerPresentReplaced();

@@ -14,6 +14,7 @@ void initServer(string port) {
 	server = new WOLServer(port);
 	if (!server->startListening() || !server->valid) {
 		cout << "Failed to start server " << endl;
+		MessageBox(NULL, L"Failed to start server", NULL, NULL);
 		return;
 	}
 	thread browseThread = thread(browseTask);
@@ -209,6 +210,7 @@ void browseTask()
 	}
 	else {
 		cout << "Service browser failed " << err << endl;
+		MessageBox(NULL, L"Failed to start browser", NULL, NULL);
 		return;
 	}
 	handleCallbacksTask(client, "Browser");

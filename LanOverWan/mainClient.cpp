@@ -12,6 +12,7 @@ void initClient(string address, string port) {
 	client->setRemoveCallback((RemoveServiceCallback)removeServiceCallback);
 	client->setDisconnectCallback((DisconnectedCallback)disconnectedCallback);
 	if (client->valid) {
+		MessageBox(NULL, L"Failed to start client", NULL, NULL);
 		client->connectToServer();
 	}
 	

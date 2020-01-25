@@ -38,7 +38,7 @@ class WOLServer
 public:
 	listeningState currentState = NotListening;
 	bool valid;
-	map<string, WarcraftSerivce> services;
+	map<string, WarcraftService> services;
 public:
 	WOLServer();																	//Done
 	WOLServer(string port);															//Done
@@ -47,9 +47,9 @@ public:
 	void stopListening();															//Done
 	string getPort();																//Done									
 	void setPort(string port);														//Done
-	bool addService(WarcraftSerivce service);
-	bool updateService(WarcraftSerivce service);
-	bool removeService(WarcraftSerivce service);
+	bool addService(WarcraftService service);
+	bool updateService(WarcraftService service);
+	bool removeService(WarcraftService service);
 private:
 	string port;
 	vector<Client*> clients;
@@ -62,9 +62,9 @@ private:
 	void sendToAll(char* bytes, int length);								//Done
 	void initClient(SOCKET sock);											//Done
 	void destroyClient(Client* client);										//Done
-	char* generateAddMessage(WarcraftSerivce service, int& len);
-	char* generateUpdateMessage(WarcraftSerivce service, int& len);
-	char* generateRemoveMessage(WarcraftSerivce service, int& len);
+	char* generateAddMessage(WarcraftService service, int& len);
+	char* generateUpdateMessage(WarcraftService service, int& len);
+	char* generateRemoveMessage(WarcraftService service, int& len);
 	int addBytes(void* buff, void* bytes, uint16_t len);
 };
 

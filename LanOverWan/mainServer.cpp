@@ -1,5 +1,13 @@
 #include "mainServer.h"
 
+map<string, pair<WarcraftService, uint32_t>> services;
+map<string, string> fullToName;
+map<string, bool> nameRecorded;
+map<pair<string, uint32_t>, ResolveServiceRef> resolves;
+
+DNSServiceRef client;
+
+WOLServer* server = NULL;
 
 
 void initServer(string port) {
@@ -43,7 +51,7 @@ static void DNSSD_API browse_reply(DNSServiceRef sdref, const DNSServiceFlags fl
 	if (added) {
 		auto entry = services.find(replyName);
 		if (entry == services.end()) {
-			WarcraftSerivce service;
+			WarcraftService service;
 			service.name = replyName;
 			service.type = BLIZZARD_TYPE;
 			services[replyName] = { service, ifIndex };

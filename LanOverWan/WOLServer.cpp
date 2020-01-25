@@ -244,7 +244,7 @@ void WOLServer::initClient(SOCKET sock) {
 }
 
 
-char* WOLServer::generateAddMessage(WarcraftSerivce service, int& len) {
+char* WOLServer::generateAddMessage(WarcraftService service, int& len) {
 	//															 host byte order
 	//    A   name length      name     type length      type    port rrtype rdlen   rdata
 	len = 1 + 2 + service.name.length() + 2 + service.type.length() + 2 + 2 + 2 + service.data->rdlen;
@@ -261,7 +261,7 @@ char* WOLServer::generateAddMessage(WarcraftSerivce service, int& len) {
 	return buff;
 	
 }
-char* WOLServer::generateUpdateMessage(WarcraftSerivce service, int& len) {
+char* WOLServer::generateUpdateMessage(WarcraftService service, int& len) {
 	//    U   namelen      name    rdlen   rdata
 	len = 1 + 2 + service.name.length() + 2 + service.data->rdlen;
 	int pos = 0;
@@ -272,7 +272,7 @@ char* WOLServer::generateUpdateMessage(WarcraftSerivce service, int& len) {
 	return buff;
 }
 
-char* WOLServer::generateRemoveMessage(WarcraftSerivce service, int& len) {
+char* WOLServer::generateRemoveMessage(WarcraftService service, int& len) {
 	//    R   namelen      name
 	len = 1 + 2 + service.name.length();
 	int pos = 0;
@@ -288,7 +288,7 @@ int WOLServer::addBytes(void* buff, void* bytes, uint16_t len) {
 	return len + 2;
 }
 
-bool WOLServer::addService(WarcraftSerivce service) {
+bool WOLServer::addService(WarcraftService service) {
 	auto entry = services.find(service.name);
 	if (entry == services.end()) {
 		services[service.name] = service;
@@ -307,7 +307,7 @@ bool WOLServer::addService(WarcraftSerivce service) {
 		return updateService(service);
 	}
 }
-bool WOLServer::updateService(WarcraftSerivce service) {
+bool WOLServer::updateService(WarcraftService service) {
 	auto entry = services.find(service.name);
 	if (entry == services.end()) {
 		return false;
@@ -328,7 +328,7 @@ bool WOLServer::updateService(WarcraftSerivce service) {
 	}
 }
 
-bool WOLServer::removeService(WarcraftSerivce service) {
+bool WOLServer::removeService(WarcraftService service) {
 	auto entry = services.find(service.name);
 	if (entry == services.end()) {
 		return false;

@@ -4,16 +4,17 @@
 #include "functions.h"
 #include <dns_sd.h>
 #include <thread>
-#include "WOLServer.h"
 #include "callbackTask.h"
 #include "mainServer.h"
+#include "mainClient.h"
 
 using namespace std;
 
 
 bool initiateFunctions();
-static void DNSSD_API reg_reply(DNSServiceRef sdref, const DNSServiceFlags flags, DNSServiceErrorType errorCode,
-	const char* name, const char* regtype, const char* domain, void* context);
+
+
+bool server = false;
 
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
 {
@@ -36,6 +37,11 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserv
 			thread initThread = thread(initServer, (string)DEFAULT_PORT);
 			initThread.detach();
 		}
+		else {
+			thread initThread = thread(initClient, (string)"127.0.0.1", (string)DEFAULT_PORT);
+			initThread.detach();
+
+		}
 	}
 
 	break;
@@ -49,6 +55,9 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserv
 		cout << "DLL_PROCESS_DETACH" << endl;
 		if (server) {
 			cleanupServer();
+		}
+		else {
+			cleanupClient();
 		}
 		break;
 	}
@@ -104,15 +113,3 @@ bool initiateFunctions() {
 
 
 
-static void DNSSD_API reg_reply(DNSServiceRef sdref, const DNSServiceFlags flags, DNSServiceErrorType errorCode,
-	const char* name, const char* regtype, const char* domain, void* context) {
-	cout << "reg reply for " << name << " " << regtype << " at " << domain << endl;
-	/*DNSRecordRef recorder;
-	DNSServiceErrorType err = DNSServiceAddRecord(sdref, &recorder, 0, service.data->rrtype, service.data->rdlen, service.data->rdata, 0);
-	if (err == kDNSServiceErr_NoError) {
-		cout << "Succesfully added record" << endl;
-	}
-	else {
-		cout << "Failed to add record" << endl;
-	}*/
-}

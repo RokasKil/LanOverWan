@@ -11,19 +11,13 @@
 
 using namespace std;
 
-WOLServer* server = NULL;
 
 struct ResolveServiceRef {
 	DNSServiceRef* resolve = NULL;
 	DNSServiceRef* query = NULL;
 };
 
-map<string, pair<WarcraftSerivce, uint32_t>> services;
-map<string, string> fullToName;
-map<string, bool> nameRecorded;
-map<pair<string, uint32_t>, ResolveServiceRef> resolves;
 
-DNSServiceRef client;
 
 bool isFullNameRecorded(string fullName);
 

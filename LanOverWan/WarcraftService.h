@@ -7,8 +7,10 @@ struct WarcraftServiceData {
 	void* rdata = NULL;
 };
 
-struct WarcraftSerivce {
+struct WarcraftService {
 	std::string name, type;
 	uint16_t port;
 	WarcraftServiceData* data = NULL;
 };
+
+void deleteServiceData(WarcraftServiceData* data);

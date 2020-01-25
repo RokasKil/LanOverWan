@@ -12,10 +12,9 @@
 #include <map>
 #include "WarcraftService.h"
 #include "WOLMessages.h"
-
+#include "WOLConstants.h"
 using namespace std;
 
-const char DEFAULT_PORT[] = "58899";
 
 struct Client {
 	thread recvThread;

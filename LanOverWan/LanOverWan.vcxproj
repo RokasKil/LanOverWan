@@ -150,13 +150,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="callbackTask.cpp" />
     <ClCompile Include="functions.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="mainServer.cpp" />
     <ClCompile Include="WOLServer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="callbackTask.h" />
     <ClInclude Include="functions.h" />
+    <ClInclude Include="mainServer.h" />
     <ClInclude Include="WarcraftService.h" />
+    <ClInclude Include="WOLConstants.h" />
     <ClInclude Include="WOLMessages.h" />
     <ClInclude Include="WOLServer.h" />
   </ItemGroup>

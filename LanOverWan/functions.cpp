@@ -46,6 +46,10 @@ LPFN_CONNECTEX ConnectExReturned = NULL;
 sendFunction sendOriginal;
 recvFunction recvOriginal;
 IsDebuggerPresentFunction IsDebuggerPresentOriginal;
+bool fServer;
+set<string> myAddresses;
+string targetAddress;
+
 int WINAPI WSAIoctlReplaced(SOCKET s, DWORD dwIoControlCode, LPVOID lpvInBuffer, DWORD cbInBuffer, LPVOID lpvOutBuffer, DWORD cbOutBuffer, LPDWORD lpcbBytesReturned, LPWSAOVERLAPPED lpOverlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine) {
 	GUID connectExGUID = WSAID_CONNECTEX;
 	int result = WSAIoctlOriginal(s, dwIoControlCode, lpvInBuffer, cbInBuffer, lpvOutBuffer, cbOutBuffer, lpcbBytesReturned, lpOverlapped, lpCompletionRoutine);
@@ -85,9 +89,11 @@ int WINAPI connectReplaced(SOCKET socket, const sockaddr* name, int namelen) {
 				targetPort = std::to_string(htons(((sockaddr_in*)name)->sin_port));
 				cout << "Got port " << targetPort << endl;
 				cout << "Target is " << targetIp << ":" << targetPort << endl;
-				if (targetIp == "127.0.0.1") {
-					cout << "breaking" << endl;
-					__debugbreak();
+				if (!fServer && find(myAddresses.begin(), myAddresses.end(), targetIp) != myAddresses.end()) {
+					//((sockaddr_in*)name)->sin_addr
+					inet_pton(AF_INET, targetAddress.c_str(), &((sockaddr_in*)name)->sin_addr);
+					targetIp = inet_ntoa(((sockaddr_in*)name)->sin_addr);
+					cout << "Rerouting to " << targetIp << ":" << targetPort << endl;
 				}
 			}
 		}
@@ -120,6 +126,12 @@ int WINAPI WSAConnectReplaced(SOCKET socket, const sockaddr* name, int namelen, 
 			targetPort = std::to_string(htons(((sockaddr_in*)name)->sin_port));
 			cout << "Got port " << targetPort << endl;
 			cout << "Target is " << targetIp << ":" << targetPort << endl;
+			if (fServer && myAddresses.find(targetIp) != myAddresses.end()) {
+				//((sockaddr_in*)name)->sin_addr
+				inet_pton(AF_INET, targetAddress.c_str(), &((sockaddr_in*)name)->sin_addr);
+				targetIp = inet_ntoa(((sockaddr_in*)name)->sin_addr);
+				cout << "Rerouting to " << targetIp << ":" << targetPort << endl;
+			}
 		}
 		else {
 			cout << "Unsupported sa_family, how did you get here?" << endl;
@@ -215,7 +227,9 @@ int WINAPI WSASendToReplaced(SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount, 
 		(info.iAddressFamily == AF_INET /*|| info.iAddressFamily == AF_INET6*/) &&
 		info.iSocketType == SOCK_DGRAM && info.iProtocol == IPPROTO_UDP)) {
 
-		cout << "WSASendTo detected " << s << " but it's not udp " << endl;
+		string targetIp = inet_ntoa(((sockaddr_in*)lpTo)->sin_addr);
+		string targetPort = std::to_string(htons(((sockaddr_in*)lpTo)->sin_port));
+		cout << "WSASendTo detected " << s << " but it's not udp " << targetIp << ":" << targetPort << endl;
 		return WSASendToOriginal(s, lpBuffers, dwBufferCount, lpNumberOfBytesSent, dwFlags, lpTo, iTolen, lpOverlapped, lpCompletionRoutine);
 	}
 	string targetIp = inet_ntoa(((sockaddr_in*)lpTo)->sin_addr);
@@ -232,11 +246,15 @@ int WINAPI WSARecvFromReplaced(SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount
 		(info.iAddressFamily == AF_INET /*|| info.iAddressFamily == AF_INET6*/) &&
 		info.iSocketType == SOCK_DGRAM && info.iProtocol == IPPROTO_UDP)) {
 
-		cout << "WSARecvFrom detected " << s << " but it's not udp " << endl;
+		string targetIp = inet_ntoa(((sockaddr_in*)lpFrom)->sin_addr);
+		string targetPort = std::to_string(htons(((sockaddr_in*)lpFrom)->sin_port));
+		cout << "WSARecvFrom detected " << s << " but it's not udp " << targetIp << ":" << targetPort << endl;
 		return WSARecvFromOriginal(s, lpBuffers, dwBufferCount, lpNumberOfBytesRecvd, lpFlags, lpFrom, lpFromlen, lpOverlapped, lpCompletionRoutine);
 	}
 
-	cout << "WSARecvFrom detected " << s << endl;
+	string targetIp = inet_ntoa(((sockaddr_in*)lpFrom)->sin_addr);
+	string targetPort = std::to_string(htons(((sockaddr_in*)lpFrom)->sin_port));
+	cout << "WSARecvFrom detected " << s << " " << targetIp << ":" << targetPort << endl;
 	return WSARecvFromOriginal(s, lpBuffers, dwBufferCount, lpNumberOfBytesRecvd, lpFlags, lpFrom, lpFromlen, lpOverlapped, lpCompletionRoutine);
 }
 

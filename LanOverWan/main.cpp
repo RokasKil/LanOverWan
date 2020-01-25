@@ -7,14 +7,16 @@
 #include "callbackTask.h"
 #include "mainServer.h"
 #include "mainClient.h"
-
+#include <iphlpapi.h>
 using namespace std;
 
 
 bool initiateFunctions();
+void cleanupFunctions();
 
+bool getLocalAddresses();
 
-bool server = false;
+bool isServer = false;
 
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
 {
@@ -31,14 +33,24 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserv
 		freopen("CONOUT$", "w", stdout);
 		cout << "DLL_PROCESS_ATTACH" << endl;
 		cout << hModule << endl;
-		//initiateFunctions();
-		if (server) {
+
+		fServer = isServer;
+
+		if (!isServer && !getLocalAddresses()) {
+			cout << "Failed to get local addresses" << endl;
+		}
+		if (!initiateFunctions()) {
+			cout << "Failed to detour" << endl;
+			return false;
+		}
+		if (isServer) {
 
 			thread initThread = thread(initServer, (string)DEFAULT_PORT);
 			initThread.detach();
 		}
 		else {
-			thread initThread = thread(initClient, (string)"127.0.0.1", (string)DEFAULT_PORT);
+			targetAddress = "5.20.79.34";
+			thread initThread = thread(initClient, (string)"5.20.79.34", (string)DEFAULT_PORT);
 			initThread.detach();
 
 		}
@@ -53,7 +65,8 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserv
 		break;
 	case DLL_PROCESS_DETACH:
 		cout << "DLL_PROCESS_DETACH" << endl;
-		if (server) {
+		cleanupFunctions();
+		if (isServer) {
 			cleanupServer();
 		}
 		else {
@@ -88,22 +101,22 @@ bool initiateFunctions() {
 	IsDebuggerPresentOriginal = IsDebuggerPresent;
 	DetourAttach((PVOID*)(&connectOriginal), connectReplaced);
 	DetourAttach((PVOID*)(&WSAConnectOriginal), WSAConnectReplaced);
-	DetourAttach((PVOID*)(&WSAIoctlOriginal), WSAIoctlReplaced);
-	DetourAttach((PVOID*)(&sendtoOriginal), sendtoReplaced);
-	DetourAttach((PVOID*)(&recvfromOriginal), recvfromReplaced);
-	DetourAttach((PVOID*)(&WSASendToOriginal), WSASendToReplaced);
-	DetourAttach((PVOID*)(&WSARecvFromOriginal), WSARecvFromReplaced);
-	DetourAttach((PVOID*)(&sendOriginal), sendReplaced);
-	DetourAttach((PVOID*)(&recvOriginal), recvReplaced);
-	DetourAttach((PVOID*)(&IsDebuggerPresentOriginal), IsDebuggerPresentReplaced);
+	//DetourAttach((PVOID*)(&WSAIoctlOriginal), WSAIoctlReplaced);
+	//DetourAttach((PVOID*)(&sendtoOriginal), sendtoReplaced);
+	//DetourAttach((PVOID*)(&recvfromOriginal), recvfromReplaced);
+	//DetourAttach((PVOID*)(&WSASendToOriginal), WSASendToReplaced);
+	//DetourAttach((PVOID*)(&WSARecvFromOriginal), WSARecvFromReplaced);
+	//DetourAttach((PVOID*)(&sendOriginal), sendReplaced);
+	//DetourAttach((PVOID*)(&recvOriginal), recvReplaced);
+	//DetourAttach((PVOID*)(&IsDebuggerPresentOriginal), IsDebuggerPresentReplaced);
 
-	DetourAttach((PVOID*)(&WSAConnectByNameWOriginal), WSAConnectByNameWReplaced);
-	DetourAttach((PVOID*)(&WSAConnectByNameAOriginal), WSAConnectByNameAReplaced);
-	DetourAttach((PVOID*)(&WSAConnectByListOriginal), WSAConnectByListReplaced);
-	if (ConnectExOriginal != NULL) {
+	//DetourAttach((PVOID*)(&WSAConnectByNameWOriginal), WSAConnectByNameWReplaced);
+	//DetourAttach((PVOID*)(&WSAConnectByNameAOriginal), WSAConnectByNameAReplaced);
+	//DetourAttach((PVOID*)(&WSAConnectByListOriginal), WSAConnectByListReplaced);
+	/*if (ConnectExOriginal != NULL) {
 		DetourAttach((PVOID*)(&ConnectExOriginal), ConnectExReplaced);
 
-	}
+	}*/
 	//DetourAttach((PVOID *)(&DispatchMessageOriginal), DispatchMessageReplaced);
 
 	DetourTransactionCommit();
@@ -111,5 +124,56 @@ bool initiateFunctions() {
 	return true;
 }
 
+void cleanupFunctions() {
 
+	DetourTransactionBegin();
+	DetourUpdateThread(GetCurrentThread());
+	DetourDetach((PVOID*)(&connectOriginal), connectReplaced);
+	DetourDetach((PVOID*)(&WSAConnectOriginal), WSAConnectReplaced);
+	DetourTransactionCommit();
+}
+
+bool getLocalAddresses() {
+	ULONG outBufLen = 15 * 1024;
+	PMIB_IPADDRTABLE  pAddrTable = NULL;
+
+
+	int iterations = 0;
+	ULONG result;
+	do {
+
+		pAddrTable = (PMIB_IPADDRTABLE)new char[outBufLen];
+		if (pAddrTable == NULL) {
+			cout << "Failed to allocate table" << endl;
+			return false;
+		}
+
+		result = GetIpAddrTable(pAddrTable, &outBufLen, true);
+
+		if (result == ERROR_INSUFFICIENT_BUFFER) {
+			delete[] pAddrTable;
+			pAddrTable = NULL;
+		}
+		else {
+			break;
+		}
+
+		iterations++;
+
+	} while ((result == ERROR_INSUFFICIENT_BUFFER) && (iterations < 10));
+	if (pAddrTable == NULL) {
+		return false;
+	}
+	for (int i = 0; i < pAddrTable->dwNumEntries; i++) {
+		struct in_addr addr;
+		addr.s_addr = pAddrTable->table[i].dwAddr;
+		string address = inet_ntoa(addr);
+		if (address != "127.0.0.1") {
+			myAddresses.insert(address);
+		}
+		cout << "Address of interface " << pAddrTable->table[i].dwIndex << ": " << inet_ntoa(addr) << endl;
+	}
+	return true;
+}
+	
 

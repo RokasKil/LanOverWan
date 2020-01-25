@@ -104,12 +104,8 @@ static void DNSSD_API browse_reply(DNSServiceRef sdref, const DNSServiceFlags fl
 		}
 		/*if (serviceStage == 3) {
 
-			DNSServiceRef registerer;
-			DNSServiceErrorType err = DNSServiceRegister(&registerer, kDNSServiceFlagsNoAutoRename, kDNSServiceInterfaceIndexAny, (service.name + "WAN").c_str(), service.type.c_str(), NULL, NULL, htons(service.port), 1, NULL, reg_reply, NULL);
-			if (err == kDNSServiceErr_NoError) {
-				thread registererThread(handleCallbacksTaskPointer, registerer, "Registerer");
-				registererThread.detach();
-			}
+
+
 			serviceStage++;
 		}*/
 	}

@@ -10,7 +10,8 @@
 #include <detours.h>
 #include <string>
 #include <iomanip>
-#include <intrin.h>
+#include <vector>
+#include <set>
 using namespace std;
 
 typedef int(WSAAPI* connectFunction)(SOCKET socket, const sockaddr* name, int namelen);
@@ -85,6 +86,11 @@ extern LPFN_CONNECTEX ConnectExReturned;
 extern sendFunction sendOriginal;
 extern recvFunction recvOriginal;
 extern IsDebuggerPresentFunction IsDebuggerPresentOriginal;
+
+extern bool fServer;
+extern set<string> myAddresses;
+extern string targetAddress;
+
 void WSAAPI cleanup();
 int WSAAPI connectReplaced(SOCKET socket, const sockaddr* name, int namelen);
 int WSAAPI WSAConnectReplaced(SOCKET socket, const sockaddr* name, int namelen, LPWSABUF lpCallerData, LPWSABUF lpCalleeData, LPQOS lpSQOS, LPQOS lpGQOS);

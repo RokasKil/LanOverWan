@@ -88,7 +88,7 @@ extern recvFunction recvOriginal;
 //extern IsDebuggerPresentFunction IsDebuggerPresentOriginal;
 
 extern bool fServer;
-extern set<string> myAddresses;
+extern set<pair<DWORD, DWORD>> myAddresses; // address, mask
 extern string targetAddress;
 
 void WSAAPI cleanup();

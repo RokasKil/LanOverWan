@@ -193,10 +193,13 @@ bool getLocalAddresses() {
 		struct in_addr addr;
 		addr.s_addr = pAddrTable->table[i].dwAddr;
 		string address = inet_ntoa(addr);
+
+		addr.s_addr = pAddrTable->table[i].dwMask;
+		string mask = inet_ntoa(addr);
 		if (address != "127.0.0.1") {
-			myAddresses.insert(address);
+			myAddresses.insert({ pAddrTable->table[i].dwAddr, pAddrTable->table[i].dwMask });
 		}
-		cout << "Address of interface " << pAddrTable->table[i].dwIndex << ": " << inet_ntoa(addr) << endl;
+		cout << "Address of interface " << pAddrTable->table[i].dwIndex << ": " << address << "(" << mask << ")" << endl;
 	}
 	return true;
 }

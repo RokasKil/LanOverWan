@@ -47,7 +47,7 @@ sendFunction sendOriginal;
 recvFunction recvOriginal;
 IsDebuggerPresentFunction IsDebuggerPresentOriginal;
 bool fServer;
-set<string> myAddresses;
+set<pair<DWORD, DWORD>> myAddresses; // address, mask;
 string targetAddress;
 
 int WINAPI WSAIoctlReplaced(SOCKET s, DWORD dwIoControlCode, LPVOID lpvInBuffer, DWORD cbInBuffer, LPVOID lpvOutBuffer, DWORD cbOutBuffer, LPDWORD lpcbBytesReturned, LPWSAOVERLAPPED lpOverlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine) {
@@ -89,7 +89,7 @@ int WINAPI connectReplaced(SOCKET socket, const sockaddr* name, int namelen) {
 				targetPort = std::to_string(htons(((sockaddr_in*)name)->sin_port));
 				//cout << "Got port " << targetPort << endl;
 				//cout << "Target is " << targetIp << ":" << targetPort << endl;
-				if (!fServer && find(myAddresses.begin(), myAddresses.end(), targetIp) != myAddresses.end()) {
+				if (!fServer && find_if(myAddresses.begin(), myAddresses.end(), [name](const auto& arg) { return ((DWORD)((sockaddr_in*)name)->sin_addr.s_addr & arg.second) == (arg.first & arg.second); }) != myAddresses.end()) {
 					//((sockaddr_in*)name)->sin_addr
 					cout << "connect, target is " << targetIp << ":" << targetPort << endl;
 					inet_pton(AF_INET, targetAddress.c_str(), &((sockaddr_in*)name)->sin_addr);
@@ -127,7 +127,7 @@ int WINAPI WSAConnectReplaced(SOCKET socket, const sockaddr* name, int namelen, 
 			targetPort = std::to_string(htons(((sockaddr_in*)name)->sin_port));
 			//cout << "Got port " << targetPort << endl;
 			//cout << "Target is " << targetIp << ":" << targetPort << endl;
-			if (fServer && myAddresses.find(targetIp) != myAddresses.end()) {
+			if (!fServer && find_if(myAddresses.begin(), myAddresses.end(), [name](const auto& arg) { return ((DWORD)((sockaddr_in*)name)->sin_addr.s_addr & arg.second) == (arg.first & arg.second); }) != myAddresses.end()) {
 				//((sockaddr_in*)name)->sin_addr
 				cout << "WSAConnect, target is " << targetIp << ":" << targetPort << endl;
 				inet_pton(AF_INET, targetAddress.c_str(), &((sockaddr_in*)name)->sin_addr);

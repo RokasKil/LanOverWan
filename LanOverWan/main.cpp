@@ -22,8 +22,6 @@ bool functionsSet = false;
 
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
 {
-	//
-	//int(fakeistream::*myfunc)() = &(fakeistream::getReplacemnt);
 	if (DetourIsHelperProcess()) {
 		return TRUE;
 	}
@@ -108,43 +106,11 @@ bool initiateFunctions() {
 
 	connectOriginal = connect;
 	WSAConnectOriginal = WSAConnect;
-	WSAIoctlOriginal = WSAIoctl;
-	sendtoOriginal = sendto;
-	recvfromOriginal = recvfrom;
-	WSASendToOriginal = WSASendTo;
-	WSARecvFromOriginal = WSARecvFrom;
-	sendOriginal = send;
-	recvOriginal = recv;
-	//WSAGetOverlappedResultOriginal = WSAGetOverlappedResult;
 
-
-
-	WSAConnectByNameWOriginal = WSAConnectByNameW;
-	WSAConnectByNameAOriginal = WSAConnectByNameA;
-	WSAConnectByListOriginal = WSAConnectByList;
-	//IsDebuggerPresentOriginal = IsDebuggerPresent;
 	DetourAttach((PVOID*)(&connectOriginal), connectReplaced);
 	DetourAttach((PVOID*)(&WSAConnectOriginal), WSAConnectReplaced);
-	//DetourAttach((PVOID*)(&WSAIoctlOriginal), WSAIoctlReplaced);
-	//DetourAttach((PVOID*)(&sendtoOriginal), sendtoReplaced);
-	//DetourAttach((PVOID*)(&recvfromOriginal), recvfromReplaced);
-	//DetourAttach((PVOID*)(&WSASendToOriginal), WSASendToReplaced);
-	//DetourAttach((PVOID*)(&WSARecvFromOriginal), WSARecvFromReplaced);
-	//DetourAttach((PVOID*)(&sendOriginal), sendReplaced);
-	//DetourAttach((PVOID*)(&recvOriginal), recvReplaced);
-	//DetourAttach((PVOID*)(&IsDebuggerPresentOriginal), IsDebuggerPresentReplaced);
-
-	//DetourAttach((PVOID*)(&WSAConnectByNameWOriginal), WSAConnectByNameWReplaced);
-	//DetourAttach((PVOID*)(&WSAConnectByNameAOriginal), WSAConnectByNameAReplaced);
-	//DetourAttach((PVOID*)(&WSAConnectByListOriginal), WSAConnectByListReplaced);
-	/*if (ConnectExOriginal != NULL) {
-		DetourAttach((PVOID*)(&ConnectExOriginal), ConnectExReplaced);
-
-	}*/
-	//DetourAttach((PVOID *)(&DispatchMessageOriginal), DispatchMessageReplaced);
 
 	DetourTransactionCommit();
-	//new std::thread(ts3plugin_configure, (void*)NULL, (void*)NULL);
 	functionsSet = true;
 	return true;
 }
